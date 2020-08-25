@@ -1,0 +1,179 @@
+# Default values for octopus.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+#  此配置文件聚合各子服务的配置项,包括:
+#  web-portal,rest-server,taskset-core,rest-server-plugin,
+#  kubebox-server,image-factory,image-factory,tasksetcontroller
+#  kube-batch,log-factory,prometheus,grafana;
+#  各服务下级属性为具体配置,这里只列出部分常需要修改项,更多配置参考具体服务chart包中的 values.yaml.
+
+global:
+  scheduler:
+    type: "kube-batch"
+  image:
+    repository:
+      address: ""
+      pathname: "openi"
+    pullPolicy: Always
+  nodeSelector: {}
+
+# 页面服务配置项
+web-portal:
+  common:
+    helperDocUri: "https://github.com/open-intelligence/openi"
+    restServerUri: "/rest-server"
+    logServiceUri: "/es"
+    grafanaUri: "/grafana"
+    terminalUri: "/terminal"
+    clusterName: "default"
+    jupyterLabProxyUri: ""
+
+# 接口服务配置项
+rest-server:
+  # 数据库配置
+  storage:
+    # 默认root账号密码
+    rootPassword: "root"
+    dataVolume:
+      # 数据在物理机上的存储路径
+      hostPath: ""
+    # 数据库运行节点的labels
+    nodeSelector:
+      octopus.openi.pcl.cn/rest-server-storage: "yes"
+  docker:
+    # 镜像仓库地址
+    registry: ""
+    # 镜像仓库用户名
+    username: ""
+    # 镜像仓库密码
+    password: ""
+  volumes:
+    - name: ghome
+      # 无需更改
+      mountPath: /ghome
+      # 数据集目录,每个用户在此目的下都会自动生成独有子目录,任务启动时将挂载入任务容器
+      hostPath: /ghome
+    - name: gmodel
+      # 无需更改
+      mountPath: /gmodel
+      # 模型目录,每个用户在此目的下都会自动生成独有子目录,任务启动时将挂载入任务容器
+      hostPath: /gmodel
+
+# 功能插件配置项
+rest-server-plugin:
+  # 数据库配置
+  storage:
+    # 默认root账号密码
+    rootPassword: "root"
+    dataVolume:
+      # 数据在物理机上的存储路径
+      hostPath: ""
+    # 数据库运行节点的labels
+    nodeSelector:
+      octopus.openi.pcl.cn/rest-server-plugin-storage: "yes"
+  service:
+    # debug类型任务的最大运行时间/秒
+    debugJobMaxRunTime: 7200
+  sharehosts:
+    # 同rest-server.volumes.[0].hostPath
+    shareDirectory: "/ghome"
+  common:
+    # 关闭jupyterLab请求body大小限制,开启限制单个请求限制在1M内
+    disableJpyLabRequestBodyLimit: "true"
+
+# 任务管理服务配置项
+taskset-core:
+  # 数据库配置
+  storage:
+    # 默认root账号密码
+    rootPassword: "root"
+    dataVolume:
+      # 数据在物理机上的存储路径
+      hostPath: ""
+    # 数据库运行节点的labels
+    nodeSelector:
+      octopus.openi.pcl.cn/taskset-core-storage: "yes"
+  # 默认接口访问令牌
+  adminToken: "KLtmMug9BDvvRjlg"
+  # debug日志开关
+  debugMode: false
+  # debug sql
+  debugSql: false
+  pipeline:
+    # 新任务并行处理量
+    workerAmount: 10
+  lifehook:
+    # 通知超时/秒
+    requestTimeOutSec: 30
+    # 并行通知量
+    maxParallelProcessRequest: 5
+    # 通知失败重试次数
+    maxRetryOnFail: 3
+
+# 虚拟终端配置项
+kubebox-server: {}
+
+# 镜像服务配置项
+image-factory: {}
+
+# 任务状态控制服务配置项
+tasksetcontroller: {}
+
+# 调度器配置项
+kube-batch: {}
+
+# 日志服务配置项
+log-factory:
+  es:
+    replicaCount: 1
+    # Elasticsearch索引分片配置
+    index:
+      number_of_shards: 5
+      number_of_replicas: 2
+    username: ""
+    password: ""
+    volumes:
+      # Elasticsearch数据持久化路径
+      esDataPath: ""
+      # Elasticsearch备份持久化路径
+      esBackupPath: ""
+    ES_JAVA_OPTS: ""
+    resources: {
+    }
+    # 数据库运行节点的labels
+    nodeSelector:
+      octopus.openi.pcl.cn/log-service-es: "yes"
+  filebeat:
+    # 资源限制
+    resources: {
+      limits: {
+        cpu: "1000m",
+        memory: "2Gi"
+      },
+      requests: {
+        cpu: "1000m",
+        memory: "2Gi"
+      }         
+    }
+
+# 监控服务配置项
+prometheus:
+  prometheus:
+    nodeSelector:
+      octopus.openi.pcl.cn/prometheus: "yes"
+    retentionDuration: 365d
+    volumes:
+      dataPath: ""
+
+
+# 监控界面配置项
+grafana:
+  env:
+    GF_AUTH_BASIC_ENABLED: "true"
+    GF_AUTH_ANONYMOUS_ENABLED: "true"
+    GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    GF_SECURITY_ADMIN_USER: "admin"
+    GF_SECURITY_ADMIN_PASSWORD: "Pa22word"
+    GF_SECURITY_ALLOW_EMBEDDING: "true"
+    GF_SERVER_ROOT_URL: "/grafana"

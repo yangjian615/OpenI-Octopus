@@ -1,0 +1,20 @@
+---
+- name: apt-get install pciutils
+  shell: apt-get install pciutils -y
+
+- name: create fact directory
+  file:
+    path: /etc/ansible/facts.d
+    state: directory
+    mode: 0755
+
+- name: custom facts
+  copy:
+    src: "{{ item }}"
+    dest: /etc/ansible/facts.d/
+    mode: 0755
+  with_fileglob:
+    - '*'
+
+- name: regather local facts
+  setup: filter=ansible_local
